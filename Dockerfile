@@ -13,7 +13,7 @@ WORKDIR /build
 RUN git clone --depth=1 --branch $WETTY_VERSION https://github.com/butlerx/wetty.git
 
 WORKDIR /build/wetty
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm build
 RUN pnpm prune --prod
 
