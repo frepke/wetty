@@ -1,9 +1,5 @@
 # Wetty Docker Image
 
-![Build](https://github.com/frepke/wetty/actions/workflows/docker-build.yml/badge.svg)
-![Docker Pulls](https://img.shields.io/docker/pulls/frepke/wetty)
-![License](https://img.shields.io/github/license/frepke/wetty)
-
 Docker image for **WeTTY (Web + TTY)** built from the latest upstream source.
 
 This repository automatically builds a container image using GitHub Actions and publishes it to **GitHub Container Registry**.
