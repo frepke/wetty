@@ -1,0 +1,41 @@
+# --- build stage ---
+FROM node:20-alpine AS base
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache git make g++ python3 py3-setuptools
+RUN npm i -g husky@9
+
+RUN git clone --depth=1 https://github.com/butlerx/wetty.git && \
+    cd wetty && \
+    pnpm install && \
+    pnpm build
+
+
+FROM node:20-alpine AS runtime
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+
+RUN adduser -D -u 10001 wetty
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+COPY --from=base ./wetty/node_modules /app/node_modules
+COPY --from=base ./wetty/build /app/build
+COPY --from=base ./wetty/package.json /app
+
+RUN apk add --no-cache coreutils openssh-client sshpass && \
+    mkdir -p /home/wetty/.ssh
+
+USER wetty
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
+
+LABEL org.opencontainers.image.source="https://github.com/frepke/wetty"
