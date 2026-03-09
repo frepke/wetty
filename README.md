@@ -31,7 +31,6 @@ http://localhost:3000
 
 - This repository does not contain the WeTTY application source itself.
 - The image clones the upstream WeTTY repository during the Docker build.
-- The Dockerfile is intentionally kept close to the working approach used by `mantralunar/wetty`.
 
 ## Optional: publish to GHCR
 
