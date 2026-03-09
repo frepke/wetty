@@ -1,0 +1,6 @@
+.git
+.github
+README.md
+LICENSE
+*.log
+node_modules
