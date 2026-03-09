@@ -46,7 +46,7 @@ docker run -d \
 
 ---
 
-## Reverse proxy example
+## Reverse proxy example 
 
 ```bash
 docker run -p 3000:3000 ghcr.io/frepke/wetty:latest --base=/wetty
