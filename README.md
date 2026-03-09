@@ -1,37 +1,105 @@
-# frepke/wetty
+# WeTTY Docker Image
 
-A minimal Docker image repository for WeTTY: clone upstream `butlerx/wetty`, build it with `pnpm`, and run it in a small runtime image.
+[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Ffrepke%2Fwetty-blue)](https://ghcr.io/frepke/wetty)
+[![Build](https://github.com/frepke/wetty/actions/workflows/docker.yml/badge.svg)](https://github.com/frepke/wetty/actions)
 
-## What is included
+Docker image for **WeTTY**, a browser-based terminal that provides SSH access through a web browser.
 
-- `Dockerfile` — multi-stage build for WeTTY
-- `README.md` — usage notes
-- `LICENSE` — MIT license for this repository
-- `.github/workflows/docker.yml` — optional GitHub Actions workflow to build and publish to GHCR
+This repository builds WeTTY directly from the official upstream project and packages it as a lightweight container image.
 
-## Build locally
+Upstream project:
+https://github.com/butlerx/wetty
 
-```bash
-docker build -t frepke/wetty:local .
+---
+
+## Image
+
+```text
+ghcr.io/frepke/wetty:latest
 ```
 
-## Run locally
+---
+
+## Quick start
 
 ```bash
-docker run --rm -p 3000:3000 frepke/wetty:local
+docker run -p 3000:3000 ghcr.io/frepke/wetty:latest
 ```
 
-Then open:
+Open:
 
 ```text
 http://localhost:3000
 ```
 
-## Notes
+---
 
-- This repository does not contain the WeTTY application source itself.
-- The image clones the upstream WeTTY repository during the Docker build.
+## Example with SSH target
 
-## Optional: publish to GHCR
+```bash
+docker run -d \
+  -p 3000:3000 \
+  ghcr.io/frepke/wetty:latest \
+  --ssh-host=myserver \
+  --ssh-user=myuser
+```
 
-The included GitHub Actions workflow can publish images to GitHub Container Registry on pushes to `main` and on tags.
+---
+
+## Reverse proxy example
+
+```bash
+docker run -p 3000:3000 ghcr.io/frepke/wetty:latest --base=/wetty
+```
+
+Access:
+
+```text
+https://example.com/wetty
+```
+
+---
+
+## Local build
+
+```bash
+git clone https://github.com/frepke/wetty.git
+cd wetty
+docker build -t wetty .
+```
+
+Run:
+
+```bash
+docker run -p 3000:3000 wetty
+```
+
+---
+
+## How this image is built
+
+The Dockerfile:
+
+1. clones the official **butlerx/wetty** repository
+2. installs dependencies using **pnpm**
+3. builds the web client
+4. copies only the required runtime files into a smaller final image
+
+This repository contains only the Docker build environment, not the WeTTY source code.
+
+---
+
+## Included quality-of-life extras
+
+- OCI image labels for a cleaner GHCR package page
+- multi-arch builds for `linux/amd64` and `linux/arm64`
+- automatic tagging for `latest`, git tags and commit SHA
+- Dependabot config for GitHub Actions updates
+
+---
+
+## License
+
+MIT License.
+
+WeTTY itself is also distributed under the MIT license by its upstream authors.
