@@ -1,6 +1,6 @@
 # frepke/wetty
 
-A minimal Docker image repository for WeTTY, following the same working approach as `mantralunar/wetty`: clone upstream `butlerx/wetty`, build it with `pnpm`, and run it in a small runtime image.
+A minimal Docker image repository for WeTTY: clone upstream `butlerx/wetty`, build it with `pnpm`, and run it in a small runtime image.
 
 ## What is included
 
