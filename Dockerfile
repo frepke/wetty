@@ -16,14 +16,11 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 WORKDIR /src
 
 # Build dependencies only in build stage
-RUN apk add --no-cache --update \
-      git \
-      python3 \
-      make \
-      g++ \
-    && apk upgrade --no-cache \
-    && corepack enable \
-    && corepack prepare "pnpm@${PNPM_VERSION}" --activate
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git python3 make g++ \
+ && rm -rf /var/lib/apt/lists/* \
+ && corepack enable \
+ && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 # Clone pinned ref (NOT floating HEAD)
 RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
