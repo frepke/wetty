@@ -9,16 +9,14 @@ ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
 ARG WETTY_REF=main
 
-# Disable git hooks in Docker/CI
 ENV HUSKY=0
 ENV CI=true
-
 ENV PNPM_HOME="/pnpm"
 ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /src
 
-# Build deps (node-gyp toolchain)
+# Install build deps (node-gyp etc.)
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       git \
@@ -26,67 +24,74 @@ RUN apt-get update \
       make \
       g++ \
       ca-certificates \
- && rm -rf /var/lib/apt/lists/* \
- && corepack enable \
+ && rm -rf /var/lib/apt/lists/*
+
+# Enable pnpm
+RUN corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Clone upstream (fallback if branch name differs)
-RUN set -eux; \
-    git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app \
-    || git clone --depth=1 --branch master "${WETTY_REPO}" app
+# Clone specific ref (reproducible)
+RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
 
 WORKDIR /src/app
 
-# Install deps (allow scripts here so native addons can build)
+# Install deps with cache optimization
+COPY pnpm-lock.yaml* ./
+RUN if [ -f pnpm-lock.yaml ]; then \
+      pnpm fetch; \
+    fi
+
 RUN if [ -f pnpm-lock.yaml ]; then \
       pnpm install --frozen-lockfile; \
     else \
       pnpm install; \
     fi
 
+# Build app
 RUN pnpm build
 
-# Prune to prod deps WITHOUT running lifecycle scripts (prevents husky/prepare)
+# Remove dev deps safely
 RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
 
 ############################
-# Runtime stage
+# Runtime stage (minimal)
 ############################
 FROM node:20-bookworm-slim AS runtime
 
 ARG PNPM_VERSION=9.15.4
-ARG INSTALL_SSHPASS=false
 
+ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
 ENV PATH="${PNPM_HOME}:${PATH}"
-ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Runtime deps + user + pnpm
+# Install only runtime deps
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       openssh-client \
       ca-certificates \
- && if [ "${INSTALL_SSHPASS}" = "true" ]; then \
-      apt-get install -y --no-install-recommends sshpass; \
-    fi \
- && rm -rf /var/lib/apt/lists/* \
- && useradd -m -u 10001 -s /bin/bash wetty \
- && corepack enable \
+ && rm -rf /var/lib/apt/lists/*
+
+# Enable pnpm (runtime)
+RUN corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-COPY --from=build /src/app/node_modules /app/node_modules
-COPY --from=build /src/app/build /app/build
-COPY --from=build /src/app/package.json /app/package.json
+# Create non-root user
+RUN useradd -m -u 10001 -s /usr/sbin/nologin wetty
+
+# Copy only what we need
+COPY --from=build /src/app/node_modules ./node_modules
+COPY --from=build /src/app/build ./build
+COPY --from=build /src/app/package.json ./package.json
 
 USER wetty
 
 EXPOSE 3000
+
 CMD ["pnpm", "start"]
 
 LABEL org.opencontainers.image.title="WeTTY"
 LABEL org.opencontainers.image.description="Browser-based terminal over SSH packaged as a Docker container."
 LABEL org.opencontainers.image.source="https://github.com/frepke/wetty"
-LABEL org.opencontainers.image.url="https://github.com/frepke/wetty"
 LABEL org.opencontainers.image.vendor="frepke"
