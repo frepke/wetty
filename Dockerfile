@@ -9,6 +9,7 @@ ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
 ARG WETTY_REF=main
 
+ENV HUSKY=0
 ENV PNPM_HOME="/pnpm"
 ENV PATH="${PNPM_HOME}:${PATH}"
 
