@@ -3,7 +3,7 @@
 ############################
 # Build stage
 ############################
-FROM node:20-alpine AS build
+FROM node:20-bookworm-slim AS build
 
 ARG PNPM_VERSION=9.15.4
 # Pin the upstream source ref (tag or commit SHA)
@@ -43,7 +43,7 @@ RUN pnpm prune --prod
 ############################
 # Runtime stage
 ############################
-FROM node:20-alpine AS runtime
+FROM node:20-bookworm-slim AS runtime
 
 ARG PNPM_VERSION=9.15.4
 # Set to "true" only if you really need sshpass
