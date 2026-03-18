@@ -6,7 +6,6 @@
 FROM node:20-bookworm-slim AS build
 
 ARG PNPM_VERSION=9.15.4
-# Pin the upstream source ref (tag or commit SHA)
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
 ARG WETTY_REF=main
 
@@ -15,19 +14,25 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /src
 
-# Build dependencies only in build stage
+# Build deps (node-gyp toolchain)
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git python3 make g++ \
+ && apt-get install -y --no-install-recommends \
+      git \
+      python3 \
+      make \
+      g++ \
+      ca-certificates \
  && rm -rf /var/lib/apt/lists/* \
  && corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Clone pinned ref (NOT floating HEAD)
-RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
+# Clone upstream (fallback if branch name differs)
+RUN set -eux; \
+    git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app \
+    || git clone --depth=1 --branch master "${WETTY_REPO}" app
 
 WORKDIR /src/app
 
-# If upstream has a lockfile, frozen install helps a lot
 RUN if [ -f pnpm-lock.yaml ]; then \
       pnpm install --frozen-lockfile; \
     else \
@@ -43,7 +48,6 @@ RUN pnpm prune --prod
 FROM node:20-bookworm-slim AS runtime
 
 ARG PNPM_VERSION=9.15.4
-# Set to "true" only if you really need sshpass
 ARG INSTALL_SSHPASS=false
 
 ENV PNPM_HOME="/pnpm"
@@ -52,12 +56,18 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-RUN apk add --no-cache --update openssh-client \
-    && if [ "${INSTALL_SSHPASS}" = "true" ]; then apk add --no-cache sshpass; fi \
-    && apk upgrade --no-cache \
-    && adduser -D -u 10001 wetty \
-    && corepack enable \
-    && corepack prepare "pnpm@${PNPM_VERSION}" --activate
+# Runtime deps + user + pnpm
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      openssh-client \
+      ca-certificates \
+ && if [ "${INSTALL_SSHPASS}" = "true" ]; then \
+      apt-get install -y --no-install-recommends sshpass; \
+    fi \
+ && rm -rf /var/lib/apt/lists/* \
+ && useradd -m -u 10001 -s /bin/bash wetty \
+ && corepack enable \
+ && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 COPY --from=build /src/app/node_modules /app/node_modules
 COPY --from=build /src/app/build /app/build
