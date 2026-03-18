@@ -9,7 +9,10 @@ ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
 ARG WETTY_REF=main
 
+# Disable git hooks in Docker/CI
 ENV HUSKY=0
+ENV CI=true
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="${PNPM_HOME}:${PATH}"
 
@@ -34,6 +37,7 @@ RUN set -eux; \
 
 WORKDIR /src/app
 
+# Install deps (allow scripts here so native addons can build)
 RUN if [ -f pnpm-lock.yaml ]; then \
       pnpm install --frozen-lockfile; \
     else \
@@ -41,7 +45,9 @@ RUN if [ -f pnpm-lock.yaml ]; then \
     fi
 
 RUN pnpm build
-RUN pnpm prune --prod
+
+# Prune to prod deps WITHOUT running lifecycle scripts (prevents husky/prepare)
+RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
 
 ############################
 # Runtime stage
