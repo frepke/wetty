@@ -1,105 +1,61 @@
-# WeTTY Docker Image
+# WeTTY Docker (Hardened & Production-Ready)
 
-[![Docker](https://img.shields.io/badge/docker-ghcr.io%2Ffrepke%2Fwetty-blue)](https://ghcr.io/frepke/wetty)
-[![Build](https://github.com/frepke/wetty/actions/workflows/docker.yml/badge.svg)](https://github.com/frepke/wetty/actions)
+This repository provides a **secure, minimal, and production-ready Docker image** for WeTTY.
 
-Docker image for **WeTTY**, a browser-based terminal that provides SSH access through a web browser.
-
-This repository builds WeTTY directly from the official upstream project and packages it as a lightweight container image.
-
-Upstream project:
-https://github.com/butlerx/wetty
+👉 Upstream project: https://github.com/butlerx/wetty  
+👉 This repo is **NOT a fork**, but a Docker packaging layer.
 
 ---
 
-## Image
+## 🚀 Features
 
-```text
-ghcr.io/frepke/wetty:latest
-```
+- Multi-stage Docker build
+- Minimal runtime image (Debian slim)
+- Non-root container (UID 10001)
+- Reproducible builds (pinned PNPM + optional commit pinning)
+- No lifecycle scripts in production
+- Optimized for CI/CD usage
+- SSH client included
 
 ---
 
-## Quick start
+## 📦 Usage
 
-```bash
-docker run -p 3000:3000 ghcr.io/frepke/wetty:latest
-```
+### Build
+docker build -t wetty .
+
+### Run
+docker run -p 3000:3000 wetty
 
 Open:
-
-```text
 http://localhost:3000
-```
 
 ---
 
-## Example with SSH target
+## ⚙️ Configuration
 
-```bash
-docker run -d \
-  -p 3000:3000 \
-  ghcr.io/frepke/wetty:latest \
-  --ssh-host=myserver \
-  --ssh-user=myuser
-```
+Environment variables supported by WeTTY:
 
----
+- PORT
+- BASE
+- SSHHOST
+- SSHPORT
 
-## Reverse proxy example 
-
-```bash
-docker run -p 3000:3000 ghcr.io/frepke/wetty:latest --base=/wetty
-```
-
-Access:
-
-```text
-https://example.com/wetty
-```
+Example:
+docker run -p 3000:3000 -e SSHHOST=your-server wetty
 
 ---
 
-## Local build
+## 🔐 Security
 
-```bash
-git clone https://github.com/frepke/wetty.git
-cd wetty
-docker build -t wetty .
-```
-
-Run:
-
-```bash
-docker run -p 3000:3000 wetty
-```
+- Runs as non-root user
+- No dev dependencies in runtime
+- Minimal attack surface
+- No lifecycle scripts executed after build
 
 ---
 
-## How this image is built
+## 📜 License
 
-The Dockerfile:
-
-1. clones the official **butlerx/wetty** repository
-2. installs dependencies using **pnpm**
-3. builds the web client
-4. copies only the required runtime files into a smaller final image
-
-This repository contains only the Docker build environment, not the WeTTY source code.
-
----
-
-## Included quality-of-life extras
-
-- OCI image labels for a cleaner GHCR package page
-- multi-arch builds for `linux/amd64` and `linux/arm64`
-- automatic tagging for `latest`, git tags and commit SHA
-- Dependabot config for GitHub Actions updates
-
----
-
-## License
-
-MIT License.
-
-WeTTY itself is also distributed under the MIT license by its upstream authors.
+Same as upstream:
+https://github.com/butlerx/wetty/blob/main/LICENSE
