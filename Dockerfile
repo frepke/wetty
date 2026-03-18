@@ -7,7 +7,7 @@ FROM node:20-bookworm-slim AS build
 
 ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
-ARG WETTY_REF=8f3c1ab   # exacte commit hash
+ARG WETTY_REF=main
 
 ENV HUSKY=0
 ENV CI=true
@@ -30,19 +30,13 @@ RUN apt-get update \
 RUN corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Clone repo en checkout exacte commit
-RUN git clone "${WETTY_REPO}" app \
- && cd app \
- && git checkout ${WETTY_REF}
+# Clone main branch (shallow clone)
+RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
 
 WORKDIR /src/app
 
 # Install dependencies
-RUN if [ -f pnpm-lock.yaml ]; then \
-      pnpm install --frozen-lockfile; \
-    else \
-      pnpm install; \
-    fi
+RUN pnpm install
 
 # Build
 RUN pnpm build
@@ -86,7 +80,7 @@ USER wetty
 
 EXPOSE 3000
 
-# Healthcheck (optioneel)
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "require('http').get('http://localhost:3000', res => process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
