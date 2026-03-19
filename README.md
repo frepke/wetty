@@ -1,61 +1,35 @@
-# WeTTY Docker (Hardened & Production-Ready)
+# Wetty
 
-This repository provides a **secure, minimal, and production-ready Docker image** for WeTTY.
+Wetty is a terminal in your browser operating over SSH. It provides a rich interactive experience in the cloud.
 
-👉 Upstream project: https://github.com/butlerx/wetty  
-👉 This repo is **NOT a fork**, but a Docker packaging layer.
+## Docker Image
 
----
+### Usage
+To run Wetty as a Docker container, you can use the following Docker Compose example:
 
-## 🚀 Features
+```yaml
+yml
+version: '3.8'
+services:
+  wetty:
+    image: frepke/wetty:latest
+    environment:
+      - WETTY_REF=your-desired-version
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./your-local-directory:/home
+      - pnpm-cache:/root/.local/share/pnpm-store
+    tmpfs:
+      - /tmp
 
-- Multi-stage Docker build
-- Minimal runtime image (Debian slim)
-- Non-root container (UID 10001)
-- Reproducible builds (pinned PNPM + optional commit pinning)
-- No lifecycle scripts in production
-- Optimized for CI/CD usage
-- SSH client included
+volumes:
+  pnpm-cache:
+```
 
----
-
-## 📦 Usage
-
-### Build
-docker build -t wetty .
-
-### Run
-docker run -p 3000:3000 wetty
-
-Open:
-http://localhost:3000
-
----
-
-## ⚙️ Configuration
-
-Environment variables supported by WeTTY:
-
-- PORT
-- BASE
-- SSHHOST
-- SSHPORT
-
-Example:
-docker run -p 3000:3000 -e SSHHOST=your-server wetty
-
----
-
-## 🔐 Security
-
-- Runs as non-root user
-- No dev dependencies in runtime
-- Minimal attack surface
-- No lifecycle scripts executed after build
-
----
-
-## 📜 License
-
-Same as upstream:
-https://github.com/butlerx/wetty/blob/main/LICENSE
+## Features
+- Tracks upstream main by default.
+- Supports pinning by WETTY_REF.
+- PNPM cache mount for build optimization.
+- Runs as a non-root user.
+- Exposes port 3000.
