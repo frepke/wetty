@@ -7,7 +7,7 @@ FROM node:20-bookworm-slim AS build
 
 ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
-ARG WETTY_REF=main
+ARG WETTY_REF=v2.7.0
 
 ENV HUSKY=0
 ENV CI=true
@@ -16,7 +16,7 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /src
 
-# Build dependencies
+# Install build dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       git \
@@ -30,15 +30,19 @@ RUN apt-get update \
 RUN corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Clone main branch (shallow clone)
+# Clone exact release (stable & reproducible)
 RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
 
 WORKDIR /src/app
 
 # Install dependencies
-RUN pnpm install
+RUN if [ -f pnpm-lock.yaml ]; then \
+      pnpm install --frozen-lockfile; \
+    else \
+      pnpm install; \
+    fi
 
-# Build
+# Build application
 RUN pnpm build
 
 # Remove dev dependencies
@@ -50,6 +54,7 @@ RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
 FROM node:20-bookworm-slim AS runtime
 
 ARG PNPM_VERSION=9.15.4
+ARG WETTY_REF=v2.7.0
 
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
@@ -57,21 +62,21 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /app
 
-# Runtime dependencies
+# Install only runtime dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       openssh-client \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Enable pnpm in runtime
+# Enable pnpm
 RUN corepack enable \
  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Non-root user
+# Create non-root user
 RUN useradd -m -u 10001 -s /usr/sbin/nologin wetty
 
-# Copy production artifacts
+# Copy built app
 COPY --from=build /src/app/node_modules ./node_modules
 COPY --from=build /src/app/build ./build
 COPY --from=build /src/app/package.json ./package.json
@@ -80,12 +85,17 @@ USER wetty
 
 EXPOSE 3000
 
-# Healthcheck
+# Healthcheck (werkt zonder curl)
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "require('http').get('http://localhost:3000', res => process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["pnpm", "start"]
 
-# Labels
+############################
+# Metadata
+############################
+LABEL org.opencontainers.image.title="WeTTY"
+LABEL org.opencontainers.image.description="Browser-based terminal over SSH (hardened Docker image)"
 LABEL org.opencontainers.image.source="https://github.com/butlerx/wetty"
 LABEL org.opencontainers.image.vendor="frepke"
+LABEL org.opencontainers.image.version="${WETTY_REF}"
