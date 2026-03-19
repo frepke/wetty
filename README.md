@@ -1,3 +1,7 @@
+[![Docker build](https://github.com/frepke/wetty/actions/workflows/docker.yml/badge.svg?branch=main)](https://github.com/frepke/wetty/actions/workflows/docker.yml?query=branch%3Amain)
+[![Latest release](https://img.shields.io/github/v/release/frepke/wetty?sort=semver)](https://github.com/frepke/wetty/releases/latest)
+[![License](https://img.shields.io/github/license/frepke/wetty)](https://github.com/frepke/wetty/blob/main/LICENSE)
+[![GHCR package](https://img.shields.io/badge/GHCR-ghcr.io%2Ffrepke%2Fwetty-blue)](https://github.com/frepke/wetty/pkgs/container/wetty)
 # WeTTY Docker (Hardened & Production-Ready)
 
 This repository provides a **secure, minimal, and production-ready Docker image** for WeTTY.
