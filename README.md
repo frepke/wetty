@@ -1,38 +1,109 @@
-# Wetty
+# WeTTY Docker (Hardened & Production-Ready)
 
-Wetty is a terminal in your browser. It uses WebSockets to communicate with a backend terminal and allows you to run terminal applications in your web browser.
+This repository provides a **secure, minimal, and production-ready Docker image** for WeTTY.
 
-## Getting Started
+👉 Upstream project: https://github.com/butlerx/wetty  
+👉 This repo is **NOT a fork**, but a Docker packaging layer.
 
-### Prerequisites
+---
 
-* Docker
-* Docker Compose
+## 🚀 Features
 
-### Running Wetty
+- Multi-stage Docker build
+- Minimal runtime image (Debian slim)
+- Non-root container (UID 10001)
+- Tracks upstream by default (`WETTY_REF=main`)
+- Optional pinning for reproducible builds (use a tag or commit SHA via build arg)
+- No dev dependencies in runtime (`pnpm prune --prod`)
+- Build-time pnpm cache (BuildKit cache mount) for faster rebuilds
+- SSH client included
 
-You can run Wetty using Docker Compose. Here is a sample `docker-compose.yml` file:
+> Note: builds are only truly reproducible if you pin `WETTY_REF` to a specific tag or commit SHA. Using `main` means you’ll pick up upstream updates on rebuild.
+
+---
+
+## 📦 Usage
+
+### Build
+```bash
+docker build -t wetty .
+```
+
+Pin upstream ref (optional):
+```bash
+docker build -t wetty --build-arg WETTY_REF=<tag-or-commit-sha> .
+```
+
+### Run
+```bash
+docker run -p 3000:3000 wetty
+```
+
+Open:
+http://localhost:3000
+
+---
+
+## 🧩 Docker Compose example
+
+Create `compose.yml`:
 
 ```yaml
-version: '3'
 services:
-  web:
-    image: wetty
-    command: /bin/sh -c "while true; do sleep 30; done;"
+  wetty:
+    build:
+      context: .
+      args:
+        WETTY_REF: main   # or pin to tag/commit SHA for reproducible builds
     ports:
-      - '3000:3000'
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      SSHHOST: "your-server"
+      SSHPORT: "22"
+      # BASE: "/"
+    restart: unless-stopped
 ```
 
-### Commands
-
-To start Wetty, use the following command:
-
+Run:
 ```bash
-docker-compose up --build
+docker compose up --build
+```
+> This Compose example builds the image locally from this repository (it does not pull a prebuilt image).
+---
+
+## ⚙️ Configuration
+
+Environment variables supported by WeTTY (depends on upstream version):
+
+- PORT
+- BASE
+- SSHHOST
+- SSHPORT
+
+Example:
+```bash
+docker run -p 3000:3000 -e SSHHOST=your-server wetty
 ```
 
-> This Compose example builds the image locally from this repository (it does not pull a prebuilt image).
+### Important: WETTY_REF is a build argument
+`WETTY_REF` is used during `docker build` (as a **build-arg**), not as a runtime environment variable.
+So set it like:
+```bash
+docker build --build-arg WETTY_REF=main -t wetty .
+```
 
-### Accessing Wetty
+---
 
-Open your web browser and navigate to `http://localhost:3000/` to access Wetty.
+## 🔐 Security
+
+- Runs as non-root user
+- No dev dependencies in runtime
+- Minimal attack surface
+
+---
+
+## 📜 License
+
+Same as upstream:
+https://github.com/butlerx/wetty/blob/main/LICENSE
