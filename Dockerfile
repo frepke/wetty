@@ -5,18 +5,15 @@
 ############################
 FROM node:20-bookworm-slim AS build
 
-ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
 ARG WETTY_REF=v2.7.0
 
 ENV HUSKY=0
 ENV CI=true
-ENV PNPM_HOME="/pnpm"
-ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /src
 
-# Install build dependencies
+# Build dependencies
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       git \
@@ -26,57 +23,48 @@ RUN apt-get update \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Enable pnpm
-RUN corepack enable \
- && corepack prepare "pnpm@${PNPM_VERSION}" --activate
+# Enable corepack (for yarn)
+RUN corepack enable
 
-# Clone exact release (stable & reproducible)
+# Clone release
 RUN git clone --depth=1 --branch "${WETTY_REF}" "${WETTY_REPO}" app
 
 WORKDIR /src/app
 
-# Install dependencies
-RUN if [ -f pnpm-lock.yaml ]; then \
-      pnpm install --frozen-lockfile; \
-    else \
-      pnpm install; \
-    fi
+# Install deps (Yarn!)
+RUN yarn install --frozen-lockfile
 
-# Build application
-RUN pnpm build
+# Build
+RUN yarn build
 
-# Remove dev dependencies
-RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
+# Remove dev deps
+RUN yarn workspaces focus --production || yarn install --production --ignore-scripts
 
 ############################
 # Runtime stage
 ############################
 FROM node:20-bookworm-slim AS runtime
 
-ARG PNPM_VERSION=9.15.4
 ARG WETTY_REF=v2.7.0
 
 ENV NODE_ENV=production
-ENV PNPM_HOME="/pnpm"
-ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /app
 
-# Install only runtime dependencies
+# Runtime deps
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       openssh-client \
       ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
-# Enable pnpm
-RUN corepack enable \
- && corepack prepare "pnpm@${PNPM_VERSION}" --activate
+# Enable corepack (for yarn)
+RUN corepack enable
 
-# Create non-root user
+# Non-root user
 RUN useradd -m -u 10001 -s /usr/sbin/nologin wetty
 
-# Copy built app
+# Copy build output
 COPY --from=build /src/app/node_modules ./node_modules
 COPY --from=build /src/app/build ./build
 COPY --from=build /src/app/package.json ./package.json
@@ -85,17 +73,15 @@ USER wetty
 
 EXPOSE 3000
 
-# Healthcheck (werkt zonder curl)
+# Healthcheck
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD node -e "require('http').get('http://localhost:3000', res => process.exit(res.statusCode===200?0:1)).on('error',()=>process.exit(1))"
 
-CMD ["pnpm", "start"]
+CMD ["yarn", "start"]
 
 ############################
 # Metadata
 ############################
-LABEL org.opencontainers.image.title="WeTTY"
-LABEL org.opencontainers.image.description="Browser-based terminal over SSH (hardened Docker image)"
 LABEL org.opencontainers.image.source="https://github.com/butlerx/wetty"
 LABEL org.opencontainers.image.vendor="frepke"
 LABEL org.opencontainers.image.version="${WETTY_REF}"
