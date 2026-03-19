@@ -39,12 +39,40 @@ docker build -t wetty --build-arg WETTY_REF=<tag-or-commit-sha> .
 docker run -p 3000:3000 wetty
 ```
 
-Open:
+Open:  
 http://localhost:3000
 
 ---
 
 ## 🧩 Docker Compose example
+
+### Option A: Pull prebuilt image (GHCR)
+
+Create `compose.yml`:
+
+```yaml
+services:
+  wetty:
+    image: ghcr.io/frepke/wetty:latest
+    container_name: wetty
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "3000:3000"
+    environment:
+      - BASE=/
+      - SSHHOST=172.17.0.1
+      - SSHUSER=root
+      - TITLE=WeTTY
+    restart: unless-stopped
+```
+
+Run:
+```bash
+docker compose up -d
+```
+
+### Option B: Build locally from this repository
 
 Create `compose.yml`:
 
@@ -69,6 +97,7 @@ Run:
 ```bash
 docker compose up --build
 ```
+
 > This Compose example builds the image locally from this repository (it does not pull a prebuilt image).
 
 ---
@@ -89,6 +118,7 @@ docker run -p 3000:3000 -e SSHHOST=your-server wetty
 
 ### Important: WETTY_REF is a build argument
 `WETTY_REF` is used during `docker build` (as a **build-arg**), not as a runtime environment variable.
+
 So set it like:
 ```bash
 docker build --build-arg WETTY_REF=main -t wetty .
@@ -106,5 +136,5 @@ docker build --build-arg WETTY_REF=main -t wetty .
 
 ## 📜 License
 
-Same as upstream:
+Same as upstream:  
 https://github.com/butlerx/wetty/blob/main/LICENSE
