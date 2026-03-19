@@ -1,35 +1,42 @@
 # Wetty
 
-Wetty is a terminal in your browser operating over SSH. It provides a rich interactive experience in the cloud.
+Wetty is a terminal in your browser to ssh into your remote servers. The implementation leverages Docker for easier deployment and configuration.
 
-## Docker Image
+## Docker Example
 
-### Usage
-To run Wetty as a Docker container, you can use the following Docker Compose example:
-
-```yaml
-yml
-version: '3.8'
-services:
-  wetty:
-    image: frepke/wetty:latest
-    environment:
-      - WETTY_REF=your-desired-version
-    ports:
-      - '3000:3000'
-    volumes:
-      - ./your-local-directory:/home
-      - pnpm-cache:/root/.local/share/pnpm-store
-    tmpfs:
-      - /tmp
-
-volumes:
-  pnpm-cache:
+To run Wetty using Docker, you can use the following command:
+```bash
+docker run -it --rm -p 3000:3000 \
+  -e USER=your-username \
+  -e PASSWORD=your-password \
+  -e WETTY_REF=your-git-reference \
+  wetty/wetty
 ```
 
-## Features
-- Tracks upstream main by default.
-- Supports pinning by WETTY_REF.
-- PNPM cache mount for build optimization.
-- Runs as a non-root user.
-- Exposes port 3000.
+## Docker Compose Example
+
+Using Docker Compose allows for a more structured configuration. Below is an example `docker-compose.yml` file:
+
+```yaml
+version: "3"
+services:
+  wetty:
+    image: wetty/wetty
+    ports:
+      - "3000:3000"
+    environment:
+      - USER=your-username
+      - PASSWORD=your-password
+      - WETTY_REF=your-git-reference
+    build:
+      context: .
+      args:
+        WETTY_REF: your-git-reference
+        
+    command: ["sh", "-c", "npm start"]
+```
+
+Make sure to replace `your-username`, `your-password`, and `your-git-reference` with your actual values.  
+
+## Behavior
+The behavior of Wetty may change based on the Dockerfile updates to ensure it aligns with the latest coding practices and enhancements. Make sure to consult the Dockerfile for any additional configuration parameters needed based on the functionality you wish to enable.
