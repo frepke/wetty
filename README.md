@@ -70,6 +70,7 @@ Run:
 docker compose up --build
 ```
 > This Compose example builds the image locally from this repository (it does not pull a prebuilt image).
+
 ---
 
 ## ⚙️ Configuration
