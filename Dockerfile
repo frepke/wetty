@@ -13,26 +13,29 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /src
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends git python3 make g++ ca-certificates \
+RUN apt-get update \ 
+  && apt-get install -y --no-install-recommends git python3 make g++ ca-certificates \ 
   && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable \
+RUN corepack enable \ 
   && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 # Clone and checkout WETTY_REF safely (works for branches/tags AND commit SHAs)
-RUN git clone --filter=blob:none --no-checkout "${WETTY_REPO}" app \
-  && cd app \
-  && git fetch --depth=1 origin "${WETTY_REF}" \
+RUN git clone --filter=blob:none --no-checkout "${WETTY_REPO}" app \ 
+  && cd app \ 
+  && git fetch --depth=1 origin "${WETTY_REF}" \ 
   && git checkout --detach "${WETTY_REF}"
 
 WORKDIR /src/app
 
-RUN pnpm install
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \ 
+    pnpm install --frozen-lockfile
 RUN pnpm build
 RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
 
 FROM node:20-bookworm-slim
+
+ARG PNPM_VERSION=9.15.4
 
 ENV NODE_ENV=production
 ENV PNPM_HOME="/pnpm"
@@ -40,12 +43,12 @@ ENV PATH="${PNPM_HOME}:${PATH}"
 
 WORKDIR /app
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends openssh-client ca-certificates \
+RUN apt-get update \ 
+  && apt-get install -y --no-install-recommends openssh-client ca-certificates \ 
   && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable \
-  && corepack prepare "pnpm@9.15.4" --activate
+RUN corepack enable \ 
+  && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
 RUN useradd -m -u 10001 -s /usr/sbin/nologin wetty
 
