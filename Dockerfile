@@ -20,7 +20,7 @@ RUN apt-get update \
 RUN corepack enable \
   && corepack prepare "pnpm@${PNPM_VERSION}" --activate
 
-# Clone and checkout WETTY_REF safely (works for branches/tags AND commit SHAs)
+# Clone repo
 RUN git clone --filter=blob:none --no-checkout "${WETTY_REPO}" app \
   && cd app \
   && git fetch --depth=1 origin "${WETTY_REF}" \
@@ -28,10 +28,16 @@ RUN git clone --filter=blob:none --no-checkout "${WETTY_REPO}" app \
 
 WORKDIR /src/app
 
+# 🔹 Commit opslaan (BELANGRIJK)
+RUN git rev-parse HEAD > /commit.txt
+
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile
+
 RUN pnpm build
 RUN NPM_CONFIG_IGNORE_SCRIPTS=true pnpm prune --prod
+
+# -----------------------------
 
 FROM node:20-bookworm-slim
 
@@ -56,11 +62,15 @@ COPY --from=build /src/app/node_modules ./node_modules
 COPY --from=build /src/app/build ./build
 COPY --from=build /src/app/package.json ./package.json
 
+# 🔹 commit bestand meenemen
+COPY --from=build /commit.txt /commit.txt
+
 USER wetty
 
 EXPOSE 3000
 
 CMD ["pnpm", "start"]
 
-LABEL org.opencontainers.image.source="https://github.com/butlerx/wetty"
-LABEL org.opencontainers.image.vendor="frepke"
+# 🔹 Labels (zonder shell expansion → veilig!)
+LABEL org.opencontainers.image.source="https://github.com/butlerx/wetty" \
+      org.opencontainers.image.vendor="frepke"
