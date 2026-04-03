@@ -1,6 +1,7 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1
 
-FROM node:20-bookworm-slim AS build
+ARG NODE_VERSION=24
+FROM node:${NODE_VERSION}-bookworm-slim AS build
 
 ARG PNPM_VERSION=9.15.4
 ARG WETTY_REPO=https://github.com/butlerx/wetty.git
